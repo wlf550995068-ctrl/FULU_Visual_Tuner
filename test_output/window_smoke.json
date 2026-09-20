@@ -1,0 +1,36 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4060 Ti/PCIe/SSE2",
+  "opengl": "3.3.0 NVIDIA 610.88",
+  "framebuffer_size": [
+    960,
+    540
+  ],
+  "vsync_requested": true,
+  "target_fps": 60,
+  "measurement": "window frame intervals after 1 second warmup, including smoke actions",
+  "frames": 661,
+  "seconds": 11.016345399999409,
+  "average_fps": 60.00174976358634,
+  "median_ms": 16.678899999533314,
+  "p95_ms": 17.020000001139124,
+  "p99_ms": 17.12509999924805,
+  "callbacks_exercised": [
+    "0.25:H",
+    "1.5:N",
+    "1.65:H",
+    "1.8:N",
+    "3.0:P",
+    "3.3:RIGHT",
+    "3.6:P",
+    "4.0:S",
+    "4.2:S",
+    "4.5:V",
+    "4.7:V",
+    "5.0:SPACE",
+    "5.3:L",
+    "5.5:L",
+    "5.7:R",
+    "6.0:D"
+  ],
+  "physical_keyboard_test": "not automated"
+}

@@ -1,0 +1,122 @@
+{
+  "hashes": {
+    "simulator.py": "64f0b7e7faeb57b9d8c387766f4ce3f670cd44d598d844a44c8f3c4792379390",
+    "fulu_visual/config.py": "d85aa832291be455ad19d57379668b27d26be2a98b6ac2b26ce9e967dacad502",
+    "fulu_visual/renderer.py": "48e7058b61434637718c3fafad698d31cc3ab4d20ab88f4f23f981380b97e67e",
+    "fulu_visual/rig.py": "dcd152143b1939832f4d0f174cd4403eb7aa293f0a7b0e2ecc4c8d3437efbd03",
+    "fulu_visual/motion.py": "f8986a05913bd07d822609e0c490724c45fd8e14a73c33c1fc6ead744c4d5963",
+    "fulu_visual/geometry.py": "c86dc16c07e21dd2b819b56a13a178482640fbbfe731c8b8820f74da07a3b3e9",
+    "fulu_visual/frame_timer.py": "12789a528e88818e158ce446906b4e790325e82f9f05f635be955b7dc97c488e",
+    "shaders/eye.frag": "b9e29ff0e7d6228571f8206ffe4c1e0545cb15e23965021f02dd2f892efcd760",
+    "shaders/eye.vert": "8ae8690f8064a9774e317cdc9616d8f2b0454dacba6668602022d631275d9cef",
+    "tests/test_rig.py": "04b9bbf2b64babe459f48137edb2f3922b317c588c7f71756dde7f95103d8df4",
+    "verify_gpu.py": "9464097ddbc01122969a0b467684c5fe485c24c2525f7e5a33bdf75797d58451",
+    "data/pose_library.json": "2dd18e75642d9b829e106fdedb5e5c84837f44b24588dffc9f62af2450ae6457"
+  },
+  "config": {
+    "schema_version": 2,
+    "display": {
+      "width": 1460,
+      "height": 920,
+      "design_aspect": 1.7777777777777777,
+      "target_fps": 60,
+      "vsync": true,
+      "safe_margin": 0.04
+    },
+    "poses": {
+      "normal": {
+        "name": "NORMAL",
+        "shape": {
+          "eye_width": 0.28,
+          "eye_height": 0.3,
+          "eye_gap": 0.18,
+          "corner_roundness": 0.48,
+          "whole_bend": 0.0,
+          "thickness": 1.0,
+          "center_bulge": 0.14,
+          "end_taper": 0.08,
+          "volume_preserve": 1.0,
+          "top_curve": 0.0,
+          "bottom_curve": 0.0,
+          "tilt": 0.0,
+          "squash": 0.0,
+          "stretch": 0.0
+        },
+        "defaults": {
+          "eye_width": 0.28,
+          "eye_height": 0.3,
+          "eye_gap": 0.18,
+          "corner_roundness": 0.55,
+          "whole_bend": 0.0,
+          "thickness": 1.0,
+          "center_bulge": 0.14,
+          "end_taper": 0.08,
+          "volume_preserve": 1.0,
+          "top_curve": 0.0,
+          "bottom_curve": 0.0,
+          "tilt": 0.0,
+          "squash": 0.0,
+          "stretch": 0.0
+        },
+        "builtin": true
+      },
+      "happy": {
+        "name": "HAPPY",
+        "shape": {
+          "eye_width": 0.3,
+          "eye_height": 0.14,
+          "eye_gap": 0.17,
+          "corner_roundness": 0.88,
+          "whole_bend": 1.12,
+          "thickness": 1.0,
+          "center_bulge": 0.18,
+          "end_taper": 0.22,
+          "volume_preserve": 1.0,
+          "top_curve": -0.007500000000000007,
+          "bottom_curve": 0.007499999999999993,
+          "tilt": 0.0,
+          "squash": 0.12,
+          "stretch": 0.04
+        },
+        "defaults": {
+          "eye_width": 0.3,
+          "eye_height": 0.14,
+          "eye_gap": 0.17,
+          "corner_roundness": 0.88,
+          "whole_bend": 1.0,
+          "thickness": 1.0,
+          "center_bulge": 0.18,
+          "end_taper": 0.22,
+          "volume_preserve": 1.0,
+          "top_curve": 0.0,
+          "bottom_curve": 0.0,
+          "tilt": 0.0,
+          "squash": 0.1,
+          "stretch": 0.04
+        },
+        "builtin": true
+      }
+    },
+    "volume": {
+      "volume_depth": 0.85,
+      "center_fill": 0.82,
+      "bulge_influence": 0.8,
+      "side_falloff": 0.48,
+      "bottom_falloff": 0.42,
+      "edge_falloff": 0.24,
+      "edge_softness": 0.8,
+      "surface_roundness": 3.0
+    },
+    "motion": {
+      "enter_response": 9.0,
+      "return_response": 8.0,
+      "target_interval": 2.6,
+      "single_step_seconds": 0.016666666666666666
+    },
+    "selection": {
+      "selected": "normal",
+      "source": "normal",
+      "target": "happy"
+    }
+  }
+}

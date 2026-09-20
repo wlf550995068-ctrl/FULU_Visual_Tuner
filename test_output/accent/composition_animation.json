@@ -1,0 +1,134 @@
+{
+  "schema_version": 2,
+  "display": {
+    "width": 1460,
+    "height": 920,
+    "design_aspect": 1.7777777777777777,
+    "target_fps": 60,
+    "vsync": true,
+    "safe_margin": 0.04
+  },
+  "poses": {
+    "normal": {
+      "name": "NORMAL",
+      "shape": {
+        "eye_width": 0.28,
+        "eye_height": 0.3,
+        "eye_gap": 0.18,
+        "corner_roundness": 0.55,
+        "whole_bend": 0.0,
+        "thickness": 1.0,
+        "center_bulge": 0.14,
+        "end_taper": 0.08,
+        "volume_preserve": 1.0,
+        "top_curve": 0.0,
+        "bottom_curve": 0.0,
+        "tilt": 0.0,
+        "squash": 0.0,
+        "stretch": 0.0
+      },
+      "defaults": {
+        "eye_width": 0.28,
+        "eye_height": 0.3,
+        "eye_gap": 0.18,
+        "corner_roundness": 0.55,
+        "whole_bend": 0.0,
+        "thickness": 1.0,
+        "center_bulge": 0.14,
+        "end_taper": 0.08,
+        "volume_preserve": 1.0,
+        "top_curve": 0.0,
+        "bottom_curve": 0.0,
+        "tilt": 0.0,
+        "squash": 0.0,
+        "stretch": 0.0
+      },
+      "builtin": true
+    },
+    "happy": {
+      "name": "HAPPY",
+      "shape": {
+        "eye_width": 0.3,
+        "eye_height": 0.14,
+        "eye_gap": 0.17,
+        "corner_roundness": 0.88,
+        "whole_bend": 1.0,
+        "thickness": 1.0,
+        "center_bulge": 0.18,
+        "end_taper": 0.22,
+        "volume_preserve": 1.0,
+        "top_curve": 0.0,
+        "bottom_curve": 0.0,
+        "tilt": 0.0,
+        "squash": 0.1,
+        "stretch": 0.04
+      },
+      "defaults": {
+        "eye_width": 0.3,
+        "eye_height": 0.14,
+        "eye_gap": 0.17,
+        "corner_roundness": 0.88,
+        "whole_bend": 1.0,
+        "thickness": 1.0,
+        "center_bulge": 0.18,
+        "end_taper": 0.22,
+        "volume_preserve": 1.0,
+        "top_curve": 0.0,
+        "bottom_curve": 0.0,
+        "tilt": 0.0,
+        "squash": 0.1,
+        "stretch": 0.04
+      },
+      "builtin": true
+    }
+  },
+  "volume": {
+    "volume_depth": 0.85,
+    "surface_roundness": 3.0,
+    "center_fill": 0.82,
+    "bulge_influence": 0.8,
+    "side_falloff": 0.48,
+    "bottom_falloff": 0.42,
+    "edge_falloff": 0.24,
+    "edge_softness": 0.8
+  },
+  "motion": {
+    "enter_response": 9.0,
+    "return_response": 8.0,
+    "target_interval": 2.6,
+    "single_step_seconds": 0.016666666666666666
+  },
+  "selection": {
+    "selected": "happy",
+    "source": "normal",
+    "target": "happy"
+  },
+  "accent": {
+    "enabled": true,
+    "type": "QUESTION",
+    "position": {
+      "x": 0.53,
+      "y": 0.28
+    },
+    "scale": 1.0,
+    "rotation": 0.0,
+    "opacity": 1.0,
+    "animation": "simple_pop"
+  },
+  "reference": {
+    "path": "",
+    "enabled": false,
+    "opacity": 0.4,
+    "fit": "Fit",
+    "zoom": 1.0,
+    "x": 0.0,
+    "y": 0.0,
+    "side_by_side": false
+  },
+  "runtime": {
+    "idle_enabled": false,
+    "idle_amplitude": 0.002,
+    "idle_hz": 0.15,
+    "gaze_amplitude": 0.018
+  }
+}

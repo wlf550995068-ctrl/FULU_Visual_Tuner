@@ -1,0 +1,36 @@
+{
+  "modified": [
+    ".gitignore",
+    "CONTRIBUTING.md",
+    "README.md",
+    "fulu_visual/config.py",
+    "fulu_visual/element_renderer.py",
+    "fulu_visual/export_tools.py",
+    "fulu_visual/geometry.py",
+    "fulu_visual/renderer.py",
+    "fulu_visual/rig.py",
+    "fulu_visual/tuner_extensions.py",
+    "fulu_visual/visual_elements.py",
+    "shaders/eye.frag",
+    "simulator.py",
+    "tests/test_upgrade.py",
+    "tests/test_visual_elements.py",
+    "tests/upgrade_smoke.py"
+  ],
+  "added": [
+    "fulu_visual/ai_provider.py",
+    "fulu_visual/ai_settings.py",
+    "fulu_visual/ai_ui.py",
+    "fulu_visual/extensions.py",
+    "fulu_visual/eye_intent.py",
+    "fulu_visual/speech.py",
+    "fulu_visual/speech_capture.ps1",
+    "tests/test_closeout.py"
+  ],
+  "saved_library_unchanged": true,
+  "real_ai_verified": false,
+  "reason": "User has no API Key; explicitly retain unverified status",
+  "microphone_initialization": "passed",
+  "windows_synthetic_wav_transcription": "passed after adding common eye phrases",
+  "human_microphone_accuracy": "not tested"
+}

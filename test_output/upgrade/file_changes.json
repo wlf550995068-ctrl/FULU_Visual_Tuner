@@ -1,0 +1,27 @@
+{
+  "modified": [
+    ".gitignore",
+    "README.md",
+    "requirements.txt",
+    "run.cmd",
+    "simulator.py",
+    "verify_gpu.py",
+    "data/pose_library.json",
+    "fulu_visual/config.py",
+    "tests/test_visual_elements.py"
+  ],
+  "added": [
+    "CONTRIBUTING.md",
+    "LICENSE_PENDING.md",
+    "verify_upgrade.py",
+    "data/pose_library.example.json",
+    "fulu_visual/derive.py",
+    "fulu_visual/export_tools.py",
+    "fulu_visual/reference.py",
+    "fulu_visual/runtime.py",
+    "fulu_visual/tuner_extensions.py",
+    "tests/test_upgrade.py",
+    "tests/upgrade_smoke.py"
+  ],
+  "old_changes_against_backup": []
+}

@@ -1,0 +1,30 @@
+{
+  "unchanged_files": {
+    "fulu_visual/renderer.py": true,
+    "fulu_visual/rig.py": true,
+    "fulu_visual/motion.py": true,
+    "fulu_visual/geometry.py": true,
+    "fulu_visual/frame_timer.py": true,
+    "shaders/eye.frag": true,
+    "shaders/eye.vert": true,
+    "tests/test_rig.py": true,
+    "verify_gpu.py": true
+  },
+  "existing_saved_parameters_preserved": true,
+  "pose_names": [
+    "NORMAL",
+    "HAPPY"
+  ],
+  "saved_accent": {
+    "enabled": false,
+    "type": "NONE",
+    "position": {
+      "x": 0.53,
+      "y": 0.28
+    },
+    "scale": 1.0,
+    "rotation": 0.0,
+    "opacity": 1.0,
+    "animation": "simple_pop"
+  }
+}

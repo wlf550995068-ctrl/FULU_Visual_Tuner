@@ -1,0 +1,42 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4060 Ti/PCIe/SSE2",
+  "window_size": [
+    1180,
+    780
+  ],
+  "frames": 659,
+  "average_fps": 59.805684705469744,
+  "p95_ms": 17.0791000018653,
+  "input_method": "ImGui mouse events through real UI, no physical mouse automation",
+  "events": [
+    "mouse-width-down",
+    "mouse-width-up",
+    "slider-edit-and-undo",
+    "mouse-happy-down",
+    "mouse-happy-up",
+    "happy-real-button",
+    "mouse-bottom-down",
+    "mouse-bottom-up",
+    "curve-edit-and-undo",
+    "mouse-play-down",
+    "mouse-play-up",
+    "auto-play-button",
+    "pause",
+    "morph-down",
+    "morph-up",
+    "scrub-check",
+    "normal-select",
+    "normal-capture",
+    "resize",
+    "resized-capture",
+    "save-reload-roundtrip",
+    "save-button-down",
+    "save-button-up",
+    "saved-button-and-close-request",
+    "unsaved-close-guard",
+    "cancel-close-up",
+    "cancel-close-retains-workbench",
+    "keyboard-callback-flat-mode"
+  ],
+  "visual_acceptance": "pending user review"
+}
