@@ -41,7 +41,7 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         parser.add_argument('--benchmark-seconds',type=float,default=0)
         parser.add_argument('--accent-smoke',action='store_true')
         parser.add_argument('--upgrade-smoke',action='store_true')
-        parser.add_argument('--settings',action='store_true')
+        parser.add_argument('--input-smoke',action='store_true')
 
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
@@ -89,6 +89,14 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         # Use full CJK range so newly named custom poses also render correctly.
         io.fonts.add_font_from_file_ttf(str(font),18,glyph_ranges_as_int_list=[32,0xFFFD,0])
         self.gui=ModernglWindowRenderer(self.wnd)
+        self.gui.REVERSE_KEYMAP.update({getattr(self.wnd.keys,c):getattr(imgui.Key,c.lower()) for c in 'ACVXYZ'})
+        # This renderer backend does not install clipboard callbacks itself.
+        # Reuse the existing native window clipboard for shortcuts and context menus.
+        platform=imgui.get_platform_io()
+        self.clipboard_get=lambda context:self.wnd._window.get_clipboard_text()
+        self.clipboard_set=lambda context,text:self.wnd._window.set_clipboard_text(text)
+        platform.platform_get_clipboard_text_fn=self.clipboard_get
+        platform.platform_set_clipboard_text_fn=self.clipboard_set
         self.wnd.exit_key=None
         self.wnd._window.set_minimum_size(1180,820)
         self.setup_style()
@@ -97,7 +105,6 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         self.ensure_canvas((960,540))
         self.active_panel="shape"
         self.setup_extensions()
-        if self.argv.settings:self.active_panel='settings'
         if self.argv.smoke_seconds and not self.argv.upgrade_smoke:self.active_panel='shape'
         self.wnd._window.push_handlers(on_close=self.native_close_request)
         print('GPU:',self.ctx.info['GL_RENDERER'],flush=True)
@@ -223,6 +230,7 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         if imgui.is_item_deactivated():self.session.end_gesture()
 
     def build_ui(self,fps):
+        self.text_menu_open=False
         w,h=self.wnd.size
         if self.clean:
             self.panel('inspect',0,0,w,h)
@@ -277,16 +285,16 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         if self.button('加载此 Pose','load-pose'):self.open_dialog('load')
         imgui.text_disabled('NORMAL 受保护；自定义 Pose 不新增产品 BASE。')
         imgui.separator()
-        sections=[('derive','AI'),('shape','形状 Shape'),('volume','体积 Volume'),('light','光感 Light'),
+        sections=[('shape','形状 Shape'),('volume','体积 Volume'),('light','光感 Light'),
                   ('motion','运动 Motion'),('accent','辅助元素 Accent'),('reference','参考图 Reference'),
-                  ('runtime','实时触发 Runtime'),('inspect','检视 Inspect'),('export','导出 Export'),('settings','设置 Settings')]
+                  ('runtime','实时触发 Runtime'),('inspect','检视 Inspect')]
         requested=getattr(self,'request_tab',None)
         if requested in [k for k,v in sections]:
             self.active_panel=requested;self.request_tab=None
         changed,index=imgui.combo('编辑分区',[k for k,v in sections].index(self.active_panel),[v for k,v in sections])
         if changed:self.active_panel=sections[index][0]
         tag=self.active_panel
-        if tag in ('reference','derive','runtime','export','settings'):
+        if tag in ('reference','runtime'):
             self.build_extension_panel(tag)
         elif tag=='accent':self.build_accent_ui()
         elif tag=='inspect':
@@ -309,6 +317,8 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
             if tag=='shape':self.build_contour_ui()
             for parameter in parameters:self.edit_slider(section,*parameter)
             if tag=='shape':self.build_eye_axes()
+            if tag=='light':imgui.text_wrapped('颜色待按批准参考图继续校准。')
+            if tag=='motion':imgui.text('响应越大 → 过渡越快。')
             imgui.end_child()
         imgui.separator()
         if self.button('保存工作台 S','save'):self.attempt(self.session.save,'整个库、体积、运动与选择已保存。')
@@ -405,9 +415,6 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         self.dialog_request=kind;self.dialog_pose=self.selected
         self.name_buffer='' if kind=='new' else self.cfg['poses'][self.selected]['name']+(' Copy' if kind=='copy' else '')
 
-    def on_close(self):
-        if hasattr(self,'speech'):self.speech.cancel()
-
     def native_close_request(self):
         self.close_requested=True;return True
 
@@ -434,7 +441,7 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         imgui.text(messages[kind])
         if kind=='all':imgui.text('自定义记录与名称保留；本操作可 Undo。')
         if kind in ('new','copy','rename'):
-            _,self.name_buffer=imgui.input_text('名称',self.name_buffer)
+            _,self.name_buffer=self.text_input('名称',self.name_buffer)
         def apply():
             if kind in ('new','copy'):
                 self.session.create(self.name_buffer,pid if kind=='copy' else None)
@@ -463,7 +470,6 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         imgui.end_popup()
 
     def on_render(self,time,frame_time):
-        self.poll_ai()
         if min(self.wnd.buffer_size)<=0:return
         if frame_time>0:
             self.recent.append(frame_time)
@@ -481,7 +487,10 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         self.wnd.title=f'FULU Pose Editor | {fps:.1f} FPS | '+('unsaved' if self.session.dirty else 'saved')
         if self.capture_requested:self.capture();self.capture_requested=False
         if self.argv.smoke_seconds:
-            if self.argv.upgrade_smoke:
+            if self.argv.input_smoke:
+                from tests.upgrade_smoke import tick_input
+                tick_input(self,time)
+            elif self.argv.upgrade_smoke:
                 from tests.upgrade_smoke import tick
                 tick(self,time)
             elif self.argv.accent_smoke:
@@ -514,17 +523,19 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         if action==k.ACTION_RELEASE:self.held_keys.discard(key)
         pressed=action==k.ACTION_PRESS and key not in self.held_keys
         if action==k.ACTION_PRESS:self.held_keys.add(key)
-        # Global exits must precede text capture and must never recreate GL resources.
-        if pressed and key==k.V:self.clean=not self.clean;return
-        if pressed and key==k.ESCAPE and self.clean:self.clean=False;return
         io=imgui.get_io()
-        if modifiers:
-            io.add_key_event(imgui.Key.mod_ctrl,bool(modifiers.ctrl))
-            io.add_key_event(imgui.Key.mod_shift,bool(modifiers.shift))
-            io.add_key_event(imgui.Key.mod_alt,bool(modifiers.alt))
-        if io.want_text_input or key not in (k.SPACE,k.P,k.RIGHT):
+        ctrl=bool(getattr(modifiers,'ctrl',False))
+        shift=bool(getattr(modifiers,'shift',False))
+        alt=bool(getattr(modifiers,'alt',False))
+        io.add_key_event(imgui.Key.mod_ctrl,ctrl)
+        io.add_key_event(imgui.Key.mod_shift,shift)
+        io.add_key_event(imgui.Key.mod_alt,alt)
+        # Text widgets receive every key first, including Ctrl+C/X/V/A.
+        if ctrl or shift or alt or io.want_text_input or key not in (k.SPACE,k.P,k.RIGHT) or action==k.ACTION_RELEASE:
             self.gui.key_event(key,action,modifiers)
-        if not pressed or io.want_text_input:return
+        if not pressed or ctrl or shift or alt or io.want_text_input or getattr(self,'text_menu_open',False):return
+        if key==k.V:self.clean=not self.clean;return
+        if key==k.ESCAPE and self.clean:self.clean=False;return
         if key==k.N:self.choose_pose('normal')
         elif key==k.H:self.choose_pose('happy')
         elif key in (k.SPACE,k.P):self.attempt(self.toggle_play)
@@ -633,12 +644,12 @@ class Simulator(WorkbenchExtensions,mglw.WindowConfig):
         if time>9.3:
             def text_keys():
                 io.want_text_input=True
-                key(self.wnd.keys.V);assert self.clean
-                key(self.wnd.keys.ESCAPE);assert not self.clean
+                key(self.wnd.keys.V);assert not self.clean
+                key(self.wnd.keys.ESCAPE);assert not self.clean and not self.close_requested
                 key(self.wnd.keys.V);key(self.wnd.keys.V);assert not self.clean
                 io.want_text_input=False
                 down('cancel-dialog')
-            event('inspect-while-text-input',text_keys)
+            event('text-input-suppresses-global-shortcuts',text_keys)
         if time>9.5:event('name-dialog-cancel-up',up)
         if time>9.8:event('resize',lambda:setattr(self.wnd,'size',(1180,820)))
         if time>10.3:event('resize-capture',lambda:self.capture('editor_resized'))

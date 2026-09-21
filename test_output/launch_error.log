@@ -1,9 +1,0 @@
-2026-09-16 19:56:30,169 - moderngl_window - INFO - Attempting to load window class: moderngl_window.context.pyglet.Window
-2026-09-16 19:56:30,738 - moderngl_window.context.base.window - INFO - Context Version:
-2026-09-16 19:56:30,738 - moderngl_window.context.base.window - INFO - ModernGL: 5.12.0
-2026-09-16 19:56:30,739 - moderngl_window.context.base.window - INFO - vendor: NVIDIA Corporation
-2026-09-16 19:56:30,739 - moderngl_window.context.base.window - INFO - renderer: NVIDIA GeForce RTX 4060 Ti/PCIe/SSE2
-2026-09-16 19:56:30,740 - moderngl_window.context.base.window - INFO - version: 3.3.0 NVIDIA 610.88
-2026-09-16 19:56:30,740 - moderngl_window.context.base.window - INFO - python: 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
-2026-09-16 19:56:30,740 - moderngl_window.context.base.window - INFO - platform: win32
-2026-09-16 19:56:30,741 - moderngl_window.context.base.window - INFO - code: 330

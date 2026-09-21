@@ -1,20 +1,89 @@
 """Additional editor panels; the existing window and render loop stay in simulator.py."""
 from pathlib import Path
 from copy import deepcopy
-import json
 from imgui_bundle import imgui
-from .config import ROOT,save_config
-from .ai_ui import AIWorkbench
+from .config import ROOT
 from .reference import ReferenceImage
-from .runtime import VisualRuntime,TRIGGERS
-from .export_tools import export_source,export_pose
+from .runtime import VisualRuntime
 
 V=imgui.ImVec2
 
-class WorkbenchExtensions(AIWorkbench):
+class WorkbenchExtensions:
+    @staticmethod
+    def wrap_text(value,width,measure):
+        """Soft line layout for single logical values (names/paths), with UTF-8 caret mapping."""
+        value=value.replace('\r','').replace('\n','');out=[];mapping={0:0};x=0.;raw_pos=0;display_pos=0
+        for char in value:
+            advance=measure(char)
+            if x and x+advance>width:out.append('\n');display_pos+=1;x=0.
+            mapping[raw_pos]=display_pos
+            out.append(char);n=len(char.encode('utf-8'));raw_pos+=n;display_pos+=n;x+=advance
+            mapping[raw_pos]=display_pos
+        return ''.join(out),mapping
+
+    def text_input(self,label,value,flags=0,size=None):
+        # Remaining values are paths and Pose names: visual wraps never enter saved text.
+        if not hasattr(self,'text_states'):self.text_states={};self.text_actions={}
+        value=value.replace('\r','').replace('\n','')
+        imgui.text(label);size=size or V(-1,86)
+        width=max(40.,(imgui.get_content_region_avail().x if size.x<=0 else size.x)-32.)
+        measure=lambda char:imgui.calc_text_size(char).x
+        displayed,mapping=self.wrap_text(value,width,measure)
+        field=imgui.get_id('##text-'+label)
+        state=self.text_states.setdefault(field,dict(cursor=len(displayed.encode('utf-8')),start=0,end=0))
+        if field in self.text_actions:imgui.set_keyboard_focus_here()
+        io=imgui.get_io()
+        copying=io.key_ctrl and (imgui.is_key_pressed(imgui.Key.c,False) or imgui.is_key_pressed(imgui.Key.x,False)) and imgui.internal.get_active_id()==field
+        def callback(data):
+            action=self.text_actions.pop(field,None)
+            if action:
+                operation,saved=action;length=data.buf_text_len
+                start=max(0,min(length,saved['start']));end=max(0,min(length,saved['end']))
+                data.cursor_pos=max(0,min(length,saved['cursor']));data.selection_start=start;data.selection_end=end
+                if operation=='all':data.select_all()
+                elif operation in ('paste','cut'):
+                    lo,hi=sorted((start,end))
+                    if lo!=hi:data.delete_chars(lo,hi-lo);data.cursor_pos=lo
+                    if operation=='paste':data.insert_chars(data.cursor_pos,imgui.get_clipboard_text().replace('\r','').replace('\n',''))
+                    data.clear_selection()
+            before=data.buf;raw=before.encode('utf-8')
+            def logical(pos):return len(raw[:pos].replace(b'\r',b'').replace(b'\n',b''))
+            cursor,start,end=(logical(pos) for pos in (data.cursor_pos,data.selection_start,data.selection_end))
+            logical_value=before.replace('\r','').replace('\n','')
+            # A visual newline is not a character: deleting across it must edit the value.
+            if logical_value==value and before!=displayed and start==end:
+                index=len(logical_value.encode('utf-8')[:cursor].decode('utf-8'))
+                if imgui.is_key_pressed(imgui.Key.backspace,True) and index:
+                    logical_value=logical_value[:index-1]+logical_value[index:]
+                    cursor=len(logical_value[:index-1].encode('utf-8'));start=end=cursor
+                elif imgui.is_key_pressed(imgui.Key.delete,True) and index<len(logical_value):
+                    logical_value=logical_value[:index]+logical_value[index+1:]
+            wrapped,positions=self.wrap_text(logical_value,width,measure)
+            if wrapped!=before:
+                data.delete_chars(0,data.buf_text_len);data.insert_chars(0,wrapped)
+                data.cursor_pos=positions.get(cursor,len(wrapped.encode('utf-8')))
+                data.selection_start=positions.get(start,data.cursor_pos);data.selection_end=positions.get(end,data.cursor_pos)
+            state.update(cursor=data.cursor_pos,start=data.selection_start,end=data.selection_end)
+            return 0
+        changed,result=imgui.input_text_multiline('##text-'+label,displayed,size,
+            flags=flags|imgui.InputTextFlags_.callback_always|imgui.InputTextFlags_.no_horizontal_scroll,callback=callback)
+        self.remember_rect('text:'+label)
+        self.text_layouts=getattr(self,'text_layouts',{});self.text_layouts[label]=dict(lines=result.count('\n')+1,width=width,display=result)
+        if copying:imgui.set_clipboard_text(imgui.get_clipboard_text().replace('\r','').replace('\n',''))
+        if imgui.begin_popup_context_item('text-menu-'+str(field)):
+            self.text_menu_open=True;lo,hi=sorted((state['start'],state['end']))
+            for title,shortcut,operation in (('粘贴 Paste','Ctrl+V','paste'),('全选 Select All','Ctrl+A','all'),('剪切 Cut','Ctrl+X','cut'),('复制 Copy','Ctrl+C','copy')):
+                selected,_=imgui.menu_item(title,shortcut,False,operation not in ('cut','copy') or lo!=hi)
+                self.remember_rect('text-menu-'+operation)
+                if selected:
+                    if operation in ('copy','cut'):imgui.set_clipboard_text(result.encode('utf-8')[lo:hi].decode('utf-8').replace('\n',''))
+                    self.text_actions[field]=(operation,dict(state))
+            imgui.end_popup()
+        logical_result=result.replace('\r','').replace('\n','')
+        return logical_result!=value,logical_result
+
     def setup_extensions(self):
         self.reference=ReferenceImage();self.reference_path=self.cfg['reference']['path']
-        self.setup_ai()
         self.runtime=VisualRuntime(self.cfg,self.selected)
         self.rendered_frame=self.rig.pose_frame(self.selected)
         self.reference_restore_path=None
@@ -70,8 +139,8 @@ class WorkbenchExtensions(AIWorkbench):
         dl.pop_clip_rect()
     def build_reference_ui(self):
         imgui.text('参考图 Reference')
-        _,self.reference_path=imgui.input_text('路径',self.reference_path)
-        if self.button('浏览图片','reference-browse'):self.attempt(self.browse_reference,'参考图已导入 D 盘资源目录。')
+        _,self.reference_path=self.text_input('路径',self.reference_path)
+        if self.button('浏览图片','reference-browse'):self.attempt(self.browse_reference,'参考图已导入本项目资源目录。')
         imgui.same_line()
         if self.button('导入路径','reference-import'):
             self.attempt(lambda:self.import_reference(str(ROOT/Path(self.reference_path))) if not Path(self.reference_path).is_absolute() else self.import_reference(self.reference_path))
@@ -84,9 +153,6 @@ class WorkbenchExtensions(AIWorkbench):
         for p in (('opacity','Overlay 透明度',0.,1.,'%.2f'),('zoom','缩放',.05,10.,'%.2f'),
                   ('x','水平位置',-3.,3.,'%.2f'),('y','垂直位置',-3.,3.,'%.2f')):
             self.edit_slider('reference',*p)
-        if self.reference.measurement:imgui.text_wrapped(self.reference.measurement['reason'])
-    def build_derive_ui(self):
-        self.build_ai_ui()
     def dispatch_runtime(self,event):
         if self.mode!='runtime':
             from .geometry import mix_shape
@@ -106,8 +172,8 @@ class WorkbenchExtensions(AIWorkbench):
         self.runtime.retarget(pid)
     def build_runtime_ui(self):
         imgui.text('实时触发 Runtime')
-        for i,(label,event) in enumerate((('看左 Left','Look Left'),('回中 Center','Center'),('看右 Right','Look Right'),('Wake','Wake'),('Shake','Shake'))):
-            if i in (1,2,4):imgui.same_line()
+        for i,(label,event) in enumerate((('看左 Left','Look Left'),('回中 Center','Center'),('看右 Right','Look Right'),('Shake','Shake'))):
+            if i in (1,2):imgui.same_line()
             if self.button(label,'event-'+event):self.attempt(lambda e=event:self.dispatch_runtime(e))
         ids=[pid for pid,p in self.cfg['poses'].items() if not p.get('archived')]
         target=getattr(self,'runtime_choice',self.selected)
@@ -117,24 +183,13 @@ class WorkbenchExtensions(AIWorkbench):
         if self.button('播放过渡 Play transition','runtime-play'):
             self.attempt(lambda:self.play_runtime_pose(self.runtime_choice))
         imgui.text(f'Progress: {self.runtime.progress:.3f}')
+        imgui.text_disabled('Look / Shake：待肉眼验收')
 
     def set_contour(self,points,key='contour',seed=False):
-        from .geometry import validate_contour
-        from .eye_intent import apply_intent
-        validate_contour(points)
-        channel={'contour':'shared','left_contour':'left','right_contour':'right'}[key]
-        intent=dict(label='CONTOUR',operations=[],contours=[dict(eye=channel,points=[dict(x=x,y=y) for x,y in points])])
-        current=self.cfg['poses'][self.selected]['shape']
-        if not seed and key in current:
-            intent['operations'].append(dict(section='shape',parameter='corner_roundness',op='set',value=current['corner_roundness']))
-        if seed:
-            values=dict(whole_bend=0.,top_curve=0.,bottom_curve=0.,center_bulge=0.,end_taper=0.,squash=0.,stretch=0.,thickness=1.,tilt=0.)
-            intent['operations']=[dict(section='shape',parameter=k,op='set',value=v) for k,v in values.items()]
-        pid,_=apply_intent(self.session,self.selected,intent)
-        self.choose_pose(pid)
+        self.choose_pose(self.session.set_contour(self.selected,points,key,seed))
     def build_contour_ui(self):
         from .geometry import seed_contour,legacy_contour,side_shape
-        imgui.text('闭合轮廓 Contour')
+        imgui.text('闭合轮廓 Contour · Experimental / 待验收')
         sides=['双眼 Both','左眼 Left','右眼 Right'];keys=['contour','left_contour','right_contour']
         _,self.contour_side=imgui.combo('编辑对象',getattr(self,'contour_side',0),sides)
         key=keys[self.contour_side];shape=self.cfg['poses'][self.selected]['shape']
@@ -172,20 +227,15 @@ class WorkbenchExtensions(AIWorkbench):
         if self.button('删点 −','contour-delete'):
             points.pop(index);self.attempt(lambda:self.set_contour(points,key))
         imgui.end_disabled();imgui.separator()
-    def build_export_ui(self):
-        imgui.text('导出 Export')
-        imgui.text_wrapped('源码包排除个人库、参考图片、备份、缓存、虚拟环境与主项目。不会自动上传 GitHub。')
-        if self.button('导出当前 Pose JSON'):
-            self.attempt(lambda:export_pose(self.cfg,self.selected), '已导出到 D 盘项目 exports。')
-        if self.button('生成工具源码包'):
-            self.attempt(lambda:export_source(), '已生成 exports/FULU_Visual_Tuner_source.zip；尚未发布。')
-        imgui.text_wrapped('许可证尚未决定；发布前需选择许可证并确认 FULU 视觉资产及参考图权利。')
     def build_extension_panel(self,tag):
         imgui.begin_child('extension-scroll-'+tag,V(0,max(100,imgui.get_content_region_avail().y-130)))
         if tag=='reference':self.build_reference_ui()
-        elif tag=='derive':self.build_derive_ui()
         elif tag=='runtime':self.build_runtime_ui()
-        elif tag=='export':self.build_export_ui()
-        elif tag=='settings':self.build_settings_ui()
         imgui.end_child()
 
+    def build_eye_axes(self):
+        from .config import EYE_PARAMETERS
+        if imgui.collapsing_header('左右眼与位置 Eyes / Transform'):
+            shape=self.cfg['poses'][self.selected]['shape']
+            # Optional keys are read through defaults; inspecting the panel does not mutate data.
+            for parameter in EYE_PARAMETERS:self.edit_slider('poses.'+self.selected+'.shape',*parameter)

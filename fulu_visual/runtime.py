@@ -1,4 +1,4 @@
-"""Standalone semantic-trigger test layer. It never imports the main robot systems."""
+"""Standalone visual action and pose-transition preview. It never imports the main robot systems."""
 from copy import deepcopy
 from dataclasses import replace
 import math
@@ -6,12 +6,12 @@ from .geometry import mix_shape,bounds
 from .config import validate_shape
 from .rig import EyeRig,RigFrame
 
-TRIGGERS={'Wake':'NORMAL'}
-GAZE_ENTER=.22
-GAZE_HOLD=.75
-GAZE_RETURN=.55
-GAZE_AMPLITUDE=.12
-SHAKE_DURATION=.55
+GAZE_ENTER=.18
+GAZE_HOLD=.90
+GAZE_RETURN=.75
+GAZE_AMPLITUDE=.18
+SHAKE_DURATION=.65
+SHAKE_AMPLITUDE=.045
 
 def ease(t):
     t=max(0.,min(1.,t));return t*t*t*(10+t*(-15+6*t))
@@ -24,14 +24,8 @@ class VisualRuntime:
         self.duration=1.;self.paused=False;self.gaze=0.;self.log=[]
         self.gaze_start=0.;self.gaze_target=0.;self.gaze_elapsed=GAZE_ENTER+GAZE_HOLD+GAZE_RETURN;self.centering=False;self.shake_elapsed=SHAKE_DURATION
     def configure(self,cfg):self.cfg=cfg
-    def resolve(self,semantic):
-        semantic=semantic.upper()
-        if 'ROOT' in semantic or semantic.startswith('VERY_'):raise ValueError('Root / VERY_* 不是运行时 Pose')
-        for pid,p in self.cfg['poses'].items():
-            if not p.get('archived') and (p['name'].upper()==semantic or p.get('metadata',{}).get('semantic')==semantic):
-                return pid
-        raise ValueError('尚未创建 '+semantic+'；请先 Auto Derive 或加载这个 Pose')
     def retarget(self,pid):
+        if pid not in self.cfg['poses']:raise ValueError('目标 Pose 不存在')
         if self.cfg['poses'][pid].get('archived'):raise ValueError('归档记录不能进入运行时')
         target=deepcopy(self.cfg['poses'][pid]['shape'])
         for i in range(101):validate_shape(mix_shape(self.current,target,i/100),self.cfg['display'])
@@ -45,10 +39,7 @@ class VisualRuntime:
             self.gaze_start=self.gaze;self.gaze_target=0. if event=='Center' else -1. if event=='Look Left' else 1.
             self.gaze_elapsed=0.;self.centering=event=='Center';self.paused=False
         elif event=='Shake':self.shake_elapsed=0.;self.paused=False
-        elif event in ('Touch','Pet','Person Detected'):raise ValueError('此测试事件已移除')
-        else:
-            semantic=TRIGGERS.get(event,'NORMAL' if event=='Return' else event.removeprefix('Semantic '))
-            self.retarget(self.resolve(semantic))
+        else:raise ValueError('未知 Visual 预览动作')
         self.log.append(event);self.log=self.log[-12:]
     def advance(self,dt):
         if not math.isfinite(dt) or dt<0:raise ValueError('Invalid delta')
@@ -69,7 +60,7 @@ class VisualRuntime:
         rt=self.cfg['runtime']
         dx=self.gaze*GAZE_AMPLITUDE;dy=0.
         if self.shake_elapsed<SHAKE_DURATION:
-            t=self.shake_elapsed/SHAKE_DURATION;dx+=.025*math.sin(t*math.tau*3)*math.sin(t*math.pi)**2
+            t=self.shake_elapsed/SHAKE_DURATION;dx+=SHAKE_AMPLITUDE*math.sin(t*math.tau*3)*math.sin(t*math.pi)**2
         if rt['idle_enabled']:
             dx+=rt['idle_amplitude']*math.sin(self.total_time*math.tau*rt['idle_hz'])
             dy=rt['idle_amplitude']*.6*math.sin(self.total_time*math.tau*rt['idle_hz']*.73)

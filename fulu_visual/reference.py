@@ -1,14 +1,12 @@
-"""Non-destructive raster reference loading and optional two-body measurements."""
+"""Non-destructive images for manual visual comparison only."""
 from pathlib import Path
 from hashlib import sha256
-from collections import deque
 import shutil
-import numpy as np
 from PIL import Image,ImageOps
 
 class ReferenceImage:
     def __init__(self):
-        self.path=None;self.image=None;self.texture=None;self.measurement=None
+        self.path=None;self.image=None;self.texture=None
     def load(self,path,assets=None):
         path=Path(str(path).strip().strip('"')).expanduser()
         if not path.is_file():raise ValueError('参考图不存在')
@@ -27,14 +25,7 @@ class ReferenceImage:
             if path.resolve()!=dest.resolve() and not dest.exists():shutil.copy2(path,dest)
             path=dest
         im.thumbnail((4096,4096),Image.Resampling.LANCZOS)
-        self.path=path;self.image=im;self.measurement=self.measure(im)
-        return self.measurement
-    def ai_payload(self):
-        import base64,io
-        if self.image is None:raise ValueError('请先导入图片')
-        image=self.image.copy();image.thumbnail((1024,1024),Image.Resampling.LANCZOS)
-        stream=io.BytesIO();image.save(stream,format='PNG')
-        return 'data:image/png;base64,'+base64.b64encode(stream.getvalue()).decode('ascii')
+        self.path=path;self.image=im
     def upload(self,ctx,gui):
         if self.texture:
             gui.remove_texture(self.texture);self.texture.release()
@@ -42,35 +33,6 @@ class ReferenceImage:
         import moderngl
         self.texture.filter=(moderngl.LINEAR,moderngl.LINEAR)
         gui.register_texture(self.texture)
-    @staticmethod
-    def measure(image):
-        im=image.copy();im.thumbnail((256,160))
-        a=np.asarray(im.convert('RGBA'),dtype=float)/255
-        rgb=a[:,:,:3];alpha=a[:,:,3]
-        border=np.concatenate((rgb[0],rgb[-1],rgb[:,0],rgb[:,-1]))
-        bg=np.median(border,axis=0)
-        mask=(np.max(abs(rgb-bg),axis=2)>.16)&(alpha>.5)
-        seen=np.zeros(mask.shape,bool);components=[]
-        h,w=mask.shape
-        for y,x in zip(*np.where(mask)):
-            if seen[y,x]:continue
-            queue=deque([(y,x)]);seen[y,x]=True;points=[]
-            while queue:
-                py,px=queue.popleft();points.append((py,px))
-                for ny,nx in ((py-1,px),(py+1,px),(py,px-1),(py,px+1)):
-                    if 0<=ny<h and 0<=nx<w and mask[ny,nx] and not seen[ny,nx]:
-                        seen[ny,nx]=True;queue.append((ny,nx))
-            if len(points)>20:
-                ys,xs=zip(*points);components.append((len(points),min(xs),max(xs)+1,min(ys),max(ys)+1))
-        components=sorted(components,reverse=True)[:2]
-        if len(components)!=2:return dict(usable=False,reason='未检测到两个清晰主体；仅作 Overlay 参考')
-        left,right=sorted(components,key=lambda c:c[1])
-        area_ratio=left[0]/right[0]
-        if not .4<area_ratio<2.5 or left[2]>=right[1] or abs((left[3]+left[4]-right[3]-right[4])/2)>.18*h:
-            return dict(usable=False,reason='双主体测量置信度不足；仅作 Overlay 参考')
-        return dict(usable=True,width=((left[2]-left[1])+(right[2]-right[1]))/(2*h),
-                    height=((left[4]-left[3])+(right[4]-right[3]))/(2*h),
-                    gap=(right[1]-left[2])/h,reason='仅提取两个亮主体的宽/高/间隔，不识别语义或材质')
     @staticmethod
     def placement(image_size,rect,mode,zoom,x,y):
         x0,y0,x1,y1=rect;w,h=image_size

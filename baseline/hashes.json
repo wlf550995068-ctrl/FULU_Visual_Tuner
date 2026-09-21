@@ -1,8 +1,0 @@
-{
-  "shaders/eye.frag": "b9e29ff0e7d6228571f8206ffe4c1e0545cb15e23965021f02dd2f892efcd760",
-  "shaders/eye.vert": "8ae8690f8064a9774e317cdc9616d8f2b0454dacba6668602022d631275d9cef",
-  "fulu_visual/renderer.py": "48e7058b61434637718c3fafad698d31cc3ab4d20ab88f4f23f981380b97e67e",
-  "fulu_visual/geometry.py": "c86dc16c07e21dd2b819b56a13a178482640fbbfe731c8b8820f74da07a3b3e9",
-  "fulu_visual/rig.py": "dcd152143b1939832f4d0f174cd4403eb7aa293f0a7b0e2ecc4c8d3437efbd03",
-  "fulu_visual/motion.py": "f8986a05913bd07d822609e0c490724c45fd8e14a73c33c1fc6ead744c4d5963"
-}

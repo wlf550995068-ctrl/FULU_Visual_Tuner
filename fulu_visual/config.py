@@ -269,6 +269,24 @@ class TuningSession:
         candidate['poses'][pid]=record(name,shape)
         candidate['selection']['selected']=pid
         self.commit(candidate);return pid
+    def set_contour(self,pid,points,key='contour',seed=False):
+        if key not in CONTOUR_KEYS:raise ValueError('Unknown contour channel')
+        validate_contour(points)
+        candidate=deepcopy(self.config);source=candidate['poses'][pid];shape=deepcopy(source['shape'])
+        if seed or key not in shape:shape['corner_roundness']=0.
+        if seed:
+            shape.update(whole_bend=0.,top_curve=0.,bottom_curve=0.,center_bulge=0.,end_taper=0.,squash=0.,stretch=0.,thickness=1.,tilt=0.)
+        shape[key]=deepcopy(points);shape.pop(key+'_mix',None)
+        if key=='contour':
+            for side in ('left','right'):shape.pop(side+'_contour',None);shape.pop(side+'_contour_mix',None)
+        validate_shape(shape,candidate['display'])
+        if source['builtin']:
+            names={p['name'] for p in candidate['poses'].values()};name='CONTOUR';i=1
+            while name in names:name='CONTOUR_'+str(i);i+=1
+            pid='pose_'+uuid.uuid4().hex[:12];candidate['poses'][pid]=record(name,shape)
+        else:candidate['poses'][pid]['shape']=shape
+        candidate['selection']['selected']=pid;self.commit(candidate)
+        return pid
     def rename(self,pid,name):
         if pid=='normal':raise ValueError('NORMAL 名称受保护')
         candidate=deepcopy(self.config);candidate['poses'][pid]['name']=self.unique_name(name,pid);self.commit(candidate)
